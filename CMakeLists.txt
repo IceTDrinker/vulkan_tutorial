@@ -17,6 +17,11 @@ file(GLOB_RECURSE EDITOR_CFG_FILES CONFIGURE_DEPENDS "${SRC_DIR}/.editorconfig")
 # For filters in VS 2019
 source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${HEADER_FILES} ${SRC_FILES} ${EDITOR_CFG_FILES})
 
+if(MSVC)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
+endif()
+
+
 # GLFW path
 set(GLFW_ROOT "default value" CACHE PATH "Path to the glfw repo root")
 
