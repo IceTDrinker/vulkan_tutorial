@@ -42,6 +42,9 @@ private:
     bool glfwExtensionsAvailable(const std::vector<VkExtensionProperties>& availableVkExtensions, const char** reqglfwExtensions, uint32_t reqglfwExtensionsCount)
     {
         std::cout << "Checking " << reqglfwExtensionsCount << " required glfw extensions..." << std::endl;
+
+        bool requiredExtensionsAreAvailable = true;
+
         for (uint32_t idx = 0; idx < reqglfwExtensionsCount; ++idx)
         {
             auto reqExt = std::string(reqglfwExtensions[idx]);
@@ -63,11 +66,11 @@ private:
             }
             else
             {
+                requiredExtensionsAreAvailable = false;
                 std::cout << "Not found !" << std::endl;
-                return false;
             }
         }
-        return true;
+        return requiredExtensionsAreAvailable;
     }
 
     void createInstance()
