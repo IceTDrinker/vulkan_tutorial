@@ -20,13 +20,8 @@ if(MSVC)
     source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${HEADER_FILES} ${SRC_FILES} ${EDITOR_CFG_FILES})
 endif()
 
-
 # GLFW path
-set(GLFW_ROOT "default value" CACHE PATH "Path to the glfw repo root")
-
-# GLM path
-# modification to have the glm directory in an include directory to avoid polluting the include search path
-set(GLM_ROOT "default value" CACHE PATH "Path to the glm repo root")
+set(GLFW_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glfw" CACHE PATH "Path to the glfw repo root")
 
 # Vulkan
 find_package(Vulkan REQUIRED)
@@ -39,8 +34,8 @@ add_subdirectory("${GLFW_ROOT}" "thirdparty/glfw")
 target_include_directories(${EXECUTABLE_NAME} SYSTEM PRIVATE "${GLFW_ROOT}/include")
 target_link_libraries(${EXECUTABLE_NAME} glfw ${GLFW_LIBRARIES})
 
-# GLM configuration
-target_include_directories(${EXECUTABLE_NAME} SYSTEM PRIVATE "${GLM_ROOT}/include")
+# Add thirdparty_include with symlink to GLM (this is to avoid glm polluting intelisense include helper in visual studio)
+target_include_directories(${EXECUTABLE_NAME} SYSTEM PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty_include")
 
 # Vulkan Configuration
 target_compile_definitions(${EXECUTABLE_NAME} PRIVATE VK_USE_PLATFORM_WIN32_KHR)
@@ -50,7 +45,7 @@ target_link_libraries(${EXECUTABLE_NAME} Vulkan::Vulkan)
 # MSVC specifics
 if(MSVC)
     # Remove the console when running the program
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
+    # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
     # Max warning level without going insane, warning = errors
     target_compile_options(${EXECUTABLE_NAME} PRIVATE /W4 /WX)
 endif()
