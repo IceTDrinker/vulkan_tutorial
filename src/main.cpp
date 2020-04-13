@@ -1,10 +1,13 @@
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
+#include <string.h>
 
+#include <cstdlib>
+#include <functional>
 #include <iostream>
 #include <stdexcept>
-#include <functional>
-#include <cstdlib>
+#include <vector>
+
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
 
 class HelloTriangleApplication
 {
@@ -36,6 +39,37 @@ private:
         window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
     }
 
+    bool glfwExtensionsAvailable(const std::vector<VkExtensionProperties>& availableVkExtensions, const char** reqglfwExtensions, uint32_t reqglfwExtensionsCount)
+    {
+        std::cout << "Checking " << reqglfwExtensionsCount << " required glfw extensions..." << std::endl;
+        for (uint32_t idx = 0; idx < reqglfwExtensionsCount; ++idx)
+        {
+            auto reqExt = std::string(reqglfwExtensions[idx]);
+            std::cout << "Checking " << reqExt << "... " << std::flush;
+
+            bool found = false;
+            for (auto& extProp : availableVkExtensions)
+            {
+                if (std::strcmp(extProp.extensionName, reqExt.c_str()) == 0)
+                {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (found)
+            {
+                std::cout << "Found !" << std::endl;
+            }
+            else
+            {
+                std::cout << "Not found !" << std::endl;
+                return false;
+            }
+        }
+        return true;
+    }
+
     void createInstance()
     {
         VkApplicationInfo appInfo = {};
@@ -46,14 +80,33 @@ private:
         appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
         appInfo.apiVersion = VK_API_VERSION_1_0;
 
-        VkInstanceCreateInfo createInfo = {};
-        createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-        createInfo.pApplicationInfo = &appInfo;
+        uint32_t extensionCount = 0;
+        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+
+        std::vector<VkExtensionProperties> extensions(extensionCount);
+
+        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
+
+        std::cout << "Vulkan available extensions :" << std::endl;
+
+        for (const auto& extension : extensions)
+        {
+            std::cout << "\t" << extension.extensionName << std::endl;
+        }
 
         uint32_t glfwExtensionCount = 0;
         const char** glfwExtensions;
 
         glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+        if (!glfwExtensionsAvailable(extensions, glfwExtensions, glfwExtensionCount))
+        {
+            throw std::runtime_error("Missing extensions required by glfw");
+        }
+
+        VkInstanceCreateInfo createInfo = {};
+        createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+        createInfo.pApplicationInfo = &appInfo;
 
         createInfo.enabledExtensionCount = glfwExtensionCount;
         createInfo.ppEnabledExtensionNames = glfwExtensions;
