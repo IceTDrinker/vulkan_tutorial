@@ -11,13 +11,13 @@ Configure cmake from inside the build dir, check the build options for glfw : ht
 
 I personally went for (on Windows) :
 
-GLFW_BUILD_DOCS : off
-GLFW_BUILD_EXAMPLES : off
-GLFW_BUILD_TESTS : off
-GLFW_INSTALL : off
-GLFW_USE_HYBRID_HPG : on (I don't have a laptop but my guess is you probably want this on to properly use your gpu)
-GLFW_VULKAN_STATIC : on (not sure quite yet what should be prefered)
-USE_MSVC_RUNTIME_LIBRARY_DLL : on (means you probably would require people to install vcredists)
+- GLFW_BUILD_DOCS : off
+- GLFW_BUILD_EXAMPLES : off
+- GLFW_BUILD_TESTS : off
+- GLFW_INSTALL : off
+- GLFW_USE_HYBRID_HPG : on (I don't have a laptop but my guess is you probably want this on to properly use your gpu)
+- GLFW_VULKAN_STATIC : on (not sure quite yet what should be prefered)
+- USE_MSVC_RUNTIME_LIBRARY_DLL : on (means you probably would require people to install vcredists)
 
 If you are on windows and open the Visual Studio solution, make sure to set vulkan_tutorial as the Startup project
 
