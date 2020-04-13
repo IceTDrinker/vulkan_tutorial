@@ -14,11 +14,10 @@ file(GLOB_RECURSE HEADER_FILES CONFIGURE_DEPENDS "${SRC_DIR}/*.h")
 file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS "${SRC_DIR}/*.cpp")
 file(GLOB_RECURSE EDITOR_CFG_FILES CONFIGURE_DEPENDS "${SRC_DIR}/.editorconfig")
 
-# For filters in VS 2019
-source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${HEADER_FILES} ${SRC_FILES} ${EDITOR_CFG_FILES})
-
+# MSVC specifics
 if(MSVC)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
+    # For filters in VS 2019
+    source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${HEADER_FILES} ${SRC_FILES} ${EDITOR_CFG_FILES})
 endif()
 
 
@@ -48,6 +47,10 @@ target_compile_definitions(${EXECUTABLE_NAME} PRIVATE VK_USE_PLATFORM_WIN32_KHR)
 target_include_directories(${EXECUTABLE_NAME} SYSTEM PRIVATE Vulkan::Vulkan)
 target_link_libraries(${EXECUTABLE_NAME} Vulkan::Vulkan)
 
-
-# Max warning level, warning = errors
-target_compile_options(${EXECUTABLE_NAME} PRIVATE /W4 /WX)
+# MSVC specifics
+if(MSVC)
+    # Remove the console when running the program
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
+    # Max warning level without going insane, warning = errors
+    target_compile_options(${EXECUTABLE_NAME} PRIVATE /W4 /WX)
+endif()
