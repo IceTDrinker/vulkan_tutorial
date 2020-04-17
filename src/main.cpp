@@ -47,13 +47,13 @@ private:
 
         for (uint32_t idx = 0; idx < reqglfwExtensionsCount; ++idx)
         {
-            auto reqExt = std::string(reqglfwExtensions[idx]);
+            auto reqExt = reqglfwExtensions[idx];
             std::cout << "Checking " << reqExt << "... " << std::flush;
 
             bool found = false;
             for (auto& extProp : availableVkExtensions)
             {
-                if (std::strcmp(extProp.extensionName, reqExt.c_str()) == 0)
+                if (std::strcmp(extProp.extensionName, reqExt) == 0)
                 {
                     found = true;
                     break;
