@@ -19,15 +19,15 @@ static constexpr const bool enableValidationLayers = true;
 #endif
 
 VkResult CreateDebugUtilsMessengerEXT(
-    VkInstance instance,
-    const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-    const VkAllocationCallbacks* pAllocator,
-    VkDebugUtilsMessengerEXT* pDebugMessenger)
+    VkInstance t_instance,
+    const VkDebugUtilsMessengerCreateInfoEXT* t_pCreateInfo,
+    const VkAllocationCallbacks* t_pAllocator,
+    VkDebugUtilsMessengerEXT* t_pDebugMessenger)
 {
-    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(t_instance, "vkCreateDebugUtilsMessengerEXT");
     if (func != nullptr)
     {
-        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+        return func(t_instance, t_pCreateInfo, t_pAllocator, t_pDebugMessenger);
     }
     else
     {
@@ -36,14 +36,14 @@ VkResult CreateDebugUtilsMessengerEXT(
 }
 
 void DestroyDebugUtilsMessengerEXT(
-    VkInstance instance,
-    VkDebugUtilsMessengerEXT debugMessenger,
-    const VkAllocationCallbacks* pAllocator)
+    VkInstance t_instance,
+    VkDebugUtilsMessengerEXT t_debugMessenger,
+    const VkAllocationCallbacks* t_pAllocator)
 {
-    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(t_instance, "vkDestroyDebugUtilsMessengerEXT");
     if (func != nullptr)
     {
-        func(instance, debugMessenger, pAllocator);
+        func(t_instance, t_debugMessenger, t_pAllocator);
     }
 }
 
@@ -65,10 +65,12 @@ public:
     static constexpr const uint32_t HEIGHT = 600;
 
 private:
-    VkInstance instance = nullptr;
-    VkDebugUtilsMessengerEXT debugMessenger = nullptr;
-    VkPhysicalDevice physicalDevice = nullptr;
-    GLFWwindow* window = nullptr;
+    VkInstance m_instance = nullptr;
+    VkDebugUtilsMessengerEXT m_debugMessenger = nullptr;
+    VkPhysicalDevice m_physicalDevice = nullptr;
+    VkDevice m_device = nullptr;
+    VkQueue m_graphicsQueue = nullptr;
+    GLFWwindow* m_window = nullptr;
 
 public:
     void run()
@@ -87,23 +89,23 @@ private:
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
-        window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+        m_window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
     }
 
     bool checkExtensionSupport(
-        const std::vector<VkExtensionProperties>& availableVkExtensions,
-        const std::vector<const char*> requiredExtensions)
+        const std::vector<VkExtensionProperties>& t_availableVkExtensions,
+        const std::vector<const char*> t_requiredExtensions)
     {
-        std::cout << "Checking " << requiredExtensions.size() << " required extensions..." << std::endl;
+        std::cout << "Checking " << t_requiredExtensions.size() << " required extensions..." << std::endl;
 
         bool requiredExtensionsAreAvailable = true;
 
-        for (const auto reqExt  : requiredExtensions)
+        for (const auto reqExt  : t_requiredExtensions)
         {
             std::cout << "Checking " << reqExt << "... " << std::flush;
 
             bool found = false;
-            for (const auto& extProp : availableVkExtensions)
+            for (const auto& extProp : t_availableVkExtensions)
             {
                 if (std::strcmp(extProp.extensionName, reqExt) == 0)
                 {
@@ -242,19 +244,19 @@ private:
             createInfo.pNext = nullptr;
         }
 
-        if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
+        if (vkCreateInstance(&createInfo, nullptr, &m_instance) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to create instance!");
         }
     }
 
-    void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo)
+    void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& t_createInfo)
     {
-        createInfo = {};
-        createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-        createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-        createInfo.pfnUserCallback = debugCallback;
+        t_createInfo = {};
+        t_createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        t_createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        t_createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        t_createInfo.pfnUserCallback = debugCallback;
     }
 
     void setupDebugMessenger()
@@ -268,22 +270,22 @@ private:
             VkDebugUtilsMessengerCreateInfoEXT createInfo = {};
             populateDebugMessengerCreateInfo(createInfo);
 
-            if (CreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger) != VK_SUCCESS)
+            if (CreateDebugUtilsMessengerEXT(m_instance, &createInfo, nullptr, &m_debugMessenger) != VK_SUCCESS)
             {
                 throw std::runtime_error("failed to set up debug messenger!");
             }
         }
     }
 
-    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device)
+    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice t_device)
     {
         QueueFamilyIndices indices;
 
         uint32_t queueFamilyCount = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+        vkGetPhysicalDeviceQueueFamilyProperties(t_device, &queueFamilyCount, nullptr);
 
         std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-        vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+        vkGetPhysicalDeviceQueueFamilyProperties(t_device, &queueFamilyCount, queueFamilies.data());
 
         int i = 0;
         for (const auto& queueFamily : queueFamilies)
@@ -304,9 +306,9 @@ private:
         return indices;
     }
 
-    bool isDeviceSuitable(VkPhysicalDevice device)
+    bool isDeviceSuitable(VkPhysicalDevice t_device)
     {
-        QueueFamilyIndices indices = findQueueFamilies(device);
+        QueueFamilyIndices indices = findQueueFamilies(t_device);
 
         return indices.isComplete();
     }
@@ -314,7 +316,7 @@ private:
     void pickPhysicalDevice()
     {
         uint32_t deviceCount = 0;
-        vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
+        vkEnumeratePhysicalDevices(m_instance, &deviceCount, nullptr);
 
         if (deviceCount == 0)
         {
@@ -322,21 +324,63 @@ private:
         }
 
         std::vector<VkPhysicalDevice> devices(deviceCount);
-        vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
+        vkEnumeratePhysicalDevices(m_instance, &deviceCount, devices.data());
 
         for (const auto& device : devices)
         {
             if (isDeviceSuitable(device))
             {
-                physicalDevice = device;
+                m_physicalDevice = device;
                 break;
             }
         }
 
-        if (physicalDevice == nullptr)
+        if (m_physicalDevice == nullptr)
         {
             throw std::runtime_error("failed to find a suitable GPU!");
         }
+    }
+
+    void createLogicalDevice()
+    {
+        QueueFamilyIndices indices = findQueueFamilies(m_physicalDevice);
+
+        VkDeviceQueueCreateInfo queueCreateInfo = {};
+        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
+        queueCreateInfo.queueCount = 1;
+
+        float queuePriority = 1.0f;
+        queueCreateInfo.pQueuePriorities = &queuePriority;
+
+        VkPhysicalDeviceFeatures deviceFeatures = {};
+
+        VkDeviceCreateInfo createInfo = {};
+        createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+
+        createInfo.pQueueCreateInfos = &queueCreateInfo;
+        createInfo.queueCreateInfoCount = 1;
+
+        createInfo.pEnabledFeatures = &deviceFeatures;
+
+        createInfo.enabledExtensionCount = 0;
+
+        if (enableValidationLayers)
+        {
+            createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+            createInfo.ppEnabledLayerNames = validationLayers.data();
+        }
+        else
+        {
+            createInfo.enabledLayerCount = 0;
+        }
+
+        if (vkCreateDevice(m_physicalDevice, &createInfo, nullptr, &m_device) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to create logical device!");
+        }
+
+        vkGetDeviceQueue(m_device, indices.graphicsFamily.value(), 0, &m_graphicsQueue);
     }
 
     void initVulkan()
@@ -344,11 +388,12 @@ private:
         createInstance();
         setupDebugMessenger();
         pickPhysicalDevice();
+        createLogicalDevice();
     }
 
     void mainLoop()
     {
-        while (!glfwWindowShouldClose(window))
+        while (!glfwWindowShouldClose(m_window))
         {
             glfwPollEvents();
         }
@@ -356,14 +401,16 @@ private:
 
     void cleanup()
     {
+        vkDestroyDevice(m_device, nullptr);
+
         if constexpr (enableValidationLayers)
         {
-            DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
+            DestroyDebugUtilsMessengerEXT(m_instance, m_debugMessenger, nullptr);
         }
 
-        vkDestroyInstance(instance, nullptr);
+        vkDestroyInstance(m_instance, nullptr);
 
-        glfwDestroyWindow(window);
+        glfwDestroyWindow(m_window);
 
         glfwTerminate();
     }
