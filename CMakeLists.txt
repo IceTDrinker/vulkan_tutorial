@@ -48,8 +48,10 @@ if(MSVC)
     # Remove the console when running the program
     # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
 
-    # Max warning level, warning = errors, C4820 is linked to padding added to struct which we don't care about here
-    target_compile_options(${EXECUTABLE_NAME} PRIVATE /Wall /WX /wd4820)
+    # Max warning level, warning = errors
+    # C4820 is linked to padding added to struct which we don't care about here
+    # C5045 is linked to spectre mitigation, we don't care about it here
+    target_compile_options(${EXECUTABLE_NAME} PRIVATE /Wall /WX /wd4820 /wd5045)
 
     # MSVC has a problem with some min and max macros colliding with the functions from algorithm : http://www.suodenjoki.dk/us/archive/2010/min-max.htm
     add_compile_definitions(NOMINMAX)
