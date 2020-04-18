@@ -13,24 +13,63 @@ set(SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 file(GLOB_RECURSE HEADER_FILES CONFIGURE_DEPENDS "${SRC_DIR}/*.h")
 file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS "${SRC_DIR}/*.cpp")
 file(GLOB_RECURSE EDITOR_CFG_FILES CONFIGURE_DEPENDS "${SRC_DIR}/.editorconfig")
+file(GLOB_RECURSE SHDR_VERT_SRC_FILES CONFIGURE_DEPENDS "${SRC_DIR}/*.vert")
+file(GLOB_RECURSE SHDR_FRAG_SRC_FILES CONFIGURE_DEPENDS "${SRC_DIR}/*.frag")
 
 # MSVC specifics
 if(MSVC)
     # For filters in VS 2019
-    source_group(TREE ${CMAKE_CURRENT_SOURCE_DIR} FILES ${HEADER_FILES} ${SRC_FILES} ${EDITOR_CFG_FILES})
+    # All sources that are listed here must be added to a target to actually appear in Visual Studio
+    source_group(
+        TREE "${CMAKE_CURRENT_SOURCE_DIR}"
+        FILES ${HEADER_FILES} ${SRC_FILES} ${EDITOR_CFG_FILES} ${SHDR_VERT_SRC_FILES} ${SHDR_FRAG_SRC_FILES}
+    )
 endif()
 
+# Output variable for the function below (ugly I know but there are no return values in CMake and I did not find solutions online)
+set(SHADER_COMPILED_FILES "")
+# Automate glslc invokation
+function(invoke_glslc SHADER_FILES SHADER_FILENAME_SUFFIX OUTPUT_DIR OUT_DIR_STAMP_FILE)
+    foreach(SHADER_FILE IN ITEMS "${SHADER_FILES}")
+        get_filename_component(SHADER_FILE_BASENAME "${SHADER_FILE}" NAME_WE)
+        set(SHADER_FILE_SPIRV_OUTNAME "${OUTPUT_DIR}${SHADER_FILE_BASENAME}_${SHADER_FILENAME_SUFFIX}.spv")
+        add_custom_command(
+            OUTPUT "${SHADER_FILE_SPIRV_OUTNAME}"
+            COMMAND glslc "${SHADER_FILE}" -o "${SHADER_FILE_SPIRV_OUTNAME}"
+            DEPENDS "${OUT_DIR_STAMP_FILE}" "${SHADER_FILE}"
+            VERBATIM
+        )
+        set(SHADER_COMPILED_FILES "${SHADER_COMPILED_FILES}" "${SHADER_FILE_SPIRV_OUTNAME}" PARENT_SCOPE)
+    endforeach()
+endfunction()
+
+set(PRE_BUILD_TARGET prebuild)
+set(SHADER_BC "${CMAKE_CURRENT_SOURCE_DIR}/shader_bc/")
+set(SHADER_BC_STMP "${SHADER_BC}shader_bc.stamp")
+
+invoke_glslc("${SHDR_VERT_SRC_FILES}" vert "${SHADER_BC}" "${SHADER_BC_STMP}")
+invoke_glslc("${SHDR_FRAG_SRC_FILES}" frag "${SHADER_BC}" "${SHADER_BC_STMP}")
+
+add_custom_command(
+    OUTPUT "${SHADER_BC_STMP}"
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${SHADER_BC}"
+    COMMAND ${CMAKE_COMMAND} -E touch "${SHADER_BC_STMP}"
+    VERBATIM
+)
+add_custom_target(${PRE_BUILD_TARGET} DEPENDS "${SHADER_COMPILED_FILES}")
+
 # GLFW path
-set(GLFW_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glfw" CACHE PATH "Path to the glfw repo root")
+set(GLFW_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glfw")
 
 # Vulkan
 find_package(Vulkan REQUIRED)
 
 # Executable
-add_executable(${EXECUTABLE_NAME} ${HEADER_FILES} ${SRC_FILES} ${EDITOR_CFG_FILES})
+add_executable(${EXECUTABLE_NAME} ${HEADER_FILES} ${SRC_FILES} ${EDITOR_CFG_FILES} ${SHDR_VERT_SRC_FILES} ${SHDR_FRAG_SRC_FILES})
+add_dependencies(${EXECUTABLE_NAME} ${PRE_BUILD_TARGET})
 
 # GLFW configuration
-add_subdirectory("${GLFW_ROOT}" "thirdparty/glfw")
+add_subdirectory("${GLFW_ROOT}")
 target_include_directories(${EXECUTABLE_NAME} SYSTEM PRIVATE "${GLFW_ROOT}/include")
 target_link_libraries(${EXECUTABLE_NAME} glfw ${GLFW_LIBRARIES})
 
