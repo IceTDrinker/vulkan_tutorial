@@ -38,14 +38,19 @@ target_link_libraries(${EXECUTABLE_NAME} glfw ${GLFW_LIBRARIES})
 target_include_directories(${EXECUTABLE_NAME} SYSTEM PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty_include")
 
 # Vulkan Configuration
+# Trust CMake https://cmake.org/cmake/help/latest/module/FindVulkan.html rather than some old official doc
 target_compile_definitions(${EXECUTABLE_NAME} PRIVATE VK_USE_PLATFORM_WIN32_KHR)
-target_include_directories(${EXECUTABLE_NAME} SYSTEM PRIVATE Vulkan::Vulkan)
-target_link_libraries(${EXECUTABLE_NAME} Vulkan::Vulkan)
+target_include_directories(${EXECUTABLE_NAME} SYSTEM PRIVATE ${Vulkan_INCLUDE_DIRS})
+target_link_libraries(${EXECUTABLE_NAME} ${Vulkan_LIBRARIES})
 
 # MSVC specifics
 if(MSVC)
     # Remove the console when running the program
     # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
-    # Max warning level without going insane, warning = errors
-    target_compile_options(${EXECUTABLE_NAME} PRIVATE /W4 /WX)
+
+    # Max warning level, warning = errors, C4820 is linked to padding added to struct which we don't care about here
+    target_compile_options(${EXECUTABLE_NAME} PRIVATE /Wall /WX /wd4820)
+
+    # MSVC has a problem with some min and max macros colliding with the functions from algorithm : http://www.suodenjoki.dk/us/archive/2010/min-max.htm
+    add_compile_definitions(NOMINMAX)
 endif()
