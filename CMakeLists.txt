@@ -49,9 +49,11 @@ if(MSVC)
     # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
 
     # Max warning level, warning = errors
+    # C4710 is linked to function not being inlined, why is this a warning ?
+    # C4711 is linked to function being inlined, why is this a warning ?
     # C4820 is linked to padding added to struct which we don't care about here
     # C5045 is linked to spectre mitigation, we don't care about it here
-    target_compile_options(${EXECUTABLE_NAME} PRIVATE /Wall /WX /wd4820 /wd5045)
+    target_compile_options(${EXECUTABLE_NAME} PRIVATE /Wall /WX /wd4710 /wd4711 /wd4820 /wd5045)
 
     # MSVC has a problem with some min and max macros colliding with the functions from algorithm : http://www.suodenjoki.dk/us/archive/2010/min-max.htm
     add_compile_definitions(NOMINMAX)

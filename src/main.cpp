@@ -153,6 +153,8 @@ private:
         return requiredExtensionsAreAvailable;
     }
 
+#pragma warning(push)
+#pragma warning(disable : 4514)
     bool checkValidationLayerSupport()
     {
         uint32_t layerCount;
@@ -192,6 +194,7 @@ private:
 
         return requiredLayersAreAvailable;
     }
+#pragma warning(pop)
 
     std::vector<const char*> getRequiredExtensions()
     {
@@ -276,6 +279,8 @@ private:
         }
     }
 
+#pragma warning(push)
+#pragma warning(disable : 4514)
     void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& t_createInfo)
     {
         t_createInfo = {};
@@ -284,6 +289,7 @@ private:
         t_createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
         t_createInfo.pfnUserCallback = debugCallback;
     }
+#pragma warning(pop)
 
     void setupDebugMessenger()
     {
@@ -620,6 +626,11 @@ private:
         }
     }
 
+    void createGraphicsPipeline()
+    {
+
+    }
+
     void initVulkan()
     {
         createInstance();
@@ -629,6 +640,7 @@ private:
         createLogicalDevice();
         createSwapChain();
         createImageViews();
+        createGraphicsPipeline();
     }
 
     void mainLoop()
