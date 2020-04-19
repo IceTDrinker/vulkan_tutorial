@@ -96,4 +96,7 @@ if(MSVC)
 
     # MSVC has a problem with some min and max macros colliding with the functions from algorithm : http://www.suodenjoki.dk/us/archive/2010/min-max.htm
     add_compile_definitions(NOMINMAX)
+
+    # Set working directory to easily access shader bytecode
+    set_target_properties(${EXECUTABLE_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 endif()

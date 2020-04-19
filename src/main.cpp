@@ -5,6 +5,7 @@
 #include <cstring>
 
 #include <algorithm>
+#include <fstream>
 #include <functional>
 #include <iostream>
 #include <optional>
@@ -76,6 +77,26 @@ struct SwapChainSupportDetails
     std::vector<VkSurfaceFormatKHR> formats;
     std::vector<VkPresentModeKHR> presentModes;
 };
+
+static std::vector<char> readFile(const std::string& t_filename)
+{
+    std::ifstream file(t_filename, std::ios::ate | std::ios::binary); // open at the end of the file
+
+    if (!file.is_open())
+    {
+        throw std::runtime_error("failed to open file!");
+    }
+
+    auto fileSize = file.tellg(); // Get size in bytes of the file
+    std::vector<char> buffer(static_cast<size_t>(fileSize)); // Allocate memory
+
+    file.seekg(0); // Go to file start
+    file.read(buffer.data(), fileSize); // Fill the buffer
+
+    file.close(); // Optional as it should be closed once file goes out of scope
+
+    return buffer;
+}
 
 class HelloTriangleApplication
 {
@@ -626,9 +647,69 @@ private:
         }
     }
 
+    VkShaderModule createShaderModule(const std::vector<char>& t_code)
+    {
+        // Important comment from the tutorial
+
+        // Creating a shader module is simple, we only need to specify a pointer
+        // to the buffer with the bytecodeand the length of it.This information is
+        // specified in a VkShaderModuleCreateInfo structure.The one catch is that
+        // the size of the bytecode is specified in bytes, but the bytecode pointer
+        // is a uint32_t pointer rather than a char pointer.Therefore we will need
+        // to cast the pointer with reinterpret_cast as shown below.When you perform
+        // a cast like this, you also need to ensure that the data satisfies the
+        // alignment requirements of uint32_t.Lucky for us, the data is stored in an
+        // std::vector where the default allocator already ensures that the data
+        // satisfies the worst case alignment requirements.
+        VkShaderModuleCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        createInfo.codeSize = t_code.size();
+        createInfo.pCode = reinterpret_cast<const uint32_t*>(t_code.data());
+
+        VkShaderModule shaderModule;
+        if (vkCreateShaderModule(m_device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to create shader module!");
+        }
+
+        return shaderModule;
+    }
+
     void createGraphicsPipeline()
     {
+        // TODO make cmake generate a constant header with the path of spv generated files
+        auto vertShaderCode = readFile("shader_bc/shader_vert.spv");
+        auto fragShaderCode = readFile("shader_bc/shader_frag.spv");
 
+        // Important comment from the tutorial
+
+        // Shader modules are just a thin wrapper around the shader bytecode that
+        // we've previously loaded from a file and the functions defined in it.
+        // The compilation and linking of the SPIR-V bytecode to machine code for
+        // execution by the GPU doesn't happen until the graphics pipeline is 
+        // created.That means that we're allowed to destroy the shader modules again
+        // as soon as pipeline creation is finished, which is why we'll make them
+        // local variables in the createGraphicsPipeline function instead of class members.
+        VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
+        VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
+
+        VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
+        vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+        vertShaderStageInfo.module = vertShaderModule;
+        vertShaderStageInfo.pName = "main";
+
+        VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
+        fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+        fragShaderStageInfo.module = fragShaderModule;
+        fragShaderStageInfo.pName = "main";
+
+        VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
+
+        // Cleanup of local shader modules
+        vkDestroyShaderModule(m_device, fragShaderModule, nullptr);
+        vkDestroyShaderModule(m_device, vertShaderModule, nullptr);
     }
 
     void initVulkan()
