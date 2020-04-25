@@ -5,6 +5,7 @@
 #include <cstring>
 
 #include <algorithm>
+#include <array>
 #include <fstream>
 #include <functional>
 #include <iostream>
@@ -17,6 +18,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include <glm/glm.hpp>
+
 #pragma warning(pop)
 
 static const std::vector<const char*> validationLayers = {"VK_LAYER_KHRONOS_validation"};
@@ -28,6 +31,9 @@ static constexpr const bool enableValidationLayers = false;
 #else
 static constexpr const bool enableValidationLayers = true;
 #endif
+
+static constexpr const uint32_t WIDTH = 800;
+static constexpr const uint32_t HEIGHT = 600;
 
 VkResult CreateDebugUtilsMessengerEXT(
     VkInstance t_instance,
@@ -99,8 +105,36 @@ static std::vector<char> readFile(const std::string& t_filename)
     return buffer;
 }
 
-static constexpr const uint32_t WIDTH = 800;
-static constexpr const uint32_t HEIGHT = 600;
+struct Vertex
+{
+    glm::vec2 pos;
+    glm::vec3 color;
+
+    static VkVertexInputBindingDescription getBindingDescription()
+    {
+        VkVertexInputBindingDescription bindingDescription{};
+        bindingDescription.binding = 0;
+        bindingDescription.stride = sizeof(Vertex);
+        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+        return bindingDescription;
+    }
+
+    static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions()
+    {
+        std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+        attributeDescriptions[0].binding = 0;
+        attributeDescriptions[0].location = 0;
+        attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+        attributeDescriptions[0].offset = offsetof(Vertex, pos);
+        attributeDescriptions[1].binding = 0;
+        attributeDescriptions[1].location = 1;
+        attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+        attributeDescriptions[1].offset = offsetof(Vertex, color);
+
+        return attributeDescriptions;
+    }
+};
 
 class HelloTriangleApplication
 {
@@ -140,9 +174,25 @@ private:
 
     bool m_framebufferResized = false;
 
+    const std::vector<Vertex> m_vertices = {
+        {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+        {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+        {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+    };
+
+    VkBuffer m_vertexBuffer = nullptr;
+    VkDeviceMemory m_vertexBufferMemory = nullptr;
+
     GLFWwindow* m_window = nullptr;
 
 public:
+    HelloTriangleApplication() {};
+    HelloTriangleApplication(const HelloTriangleApplication&) = delete;
+    HelloTriangleApplication(HelloTriangleApplication&&) = delete;
+    HelloTriangleApplication& operator=(const HelloTriangleApplication&) = delete;
+    HelloTriangleApplication& operator=(HelloTriangleApplication&&) = delete;
+    virtual ~HelloTriangleApplication() = default;
+
     void run()
     {
         initWindow();
@@ -177,7 +227,7 @@ private:
 
         bool requiredExtensionsAreAvailable = true;
 
-        for (const auto reqExt  : t_requiredExtensions)
+        for (const auto reqExt : t_requiredExtensions)
         {
             std::cout << "Checking " << reqExt << "... " << std::flush;
 
@@ -397,9 +447,9 @@ private:
         return indices;
     }
 
-    VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats)
+    VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& t_availableFormats)
     {
-        for (const auto& availableFormat : availableFormats)
+        for (const auto& availableFormat : t_availableFormats)
         {
             if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB && availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
             {
@@ -407,12 +457,12 @@ private:
             }
         }
 
-        return availableFormats[0];
+        return t_availableFormats[0];
     }
 
-    VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes)
+    VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& t_availablePresentModes)
     {
-        for (const auto& availablePresentMode : availablePresentModes)
+        for (const auto& availablePresentMode : t_availablePresentModes)
         {
             if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
             {
@@ -423,11 +473,11 @@ private:
         return VK_PRESENT_MODE_FIFO_KHR;
     }
 
-    VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities)
+    VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& t_capabilities)
     {
-        if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
+        if (t_capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
         {
-            return capabilities.currentExtent;
+            return t_capabilities.currentExtent;
         }
         else
         {
@@ -742,8 +792,14 @@ private:
 
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        vertexInputInfo.vertexBindingDescriptionCount = 0;
-        vertexInputInfo.vertexAttributeDescriptionCount = 0;
+
+        auto bindingDescription = Vertex::getBindingDescription();
+        auto attributeDescriptions = Vertex::getAttributeDescriptions();
+
+        vertexInputInfo.vertexBindingDescriptionCount = 1;
+        vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+        vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+        vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
         VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
         inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -956,7 +1012,11 @@ private:
             {
                 vkCmdBindPipeline(m_commandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphicsPipeline);
 
-                vkCmdDraw(m_commandBuffers[i], 3, 1, 0, 0);
+                VkBuffer vertexBuffers[] = {m_vertexBuffer};
+                VkDeviceSize offsets[] = {0};
+                vkCmdBindVertexBuffers(m_commandBuffers[i], 0, 1, vertexBuffers, offsets);
+
+                vkCmdDraw(m_commandBuffers[i], static_cast<uint32_t>(m_vertices.size()), 1, 0, 0);
             }
             vkCmdEndRenderPass(m_commandBuffers[i]);
 
@@ -993,6 +1053,58 @@ private:
         }
     }
 
+    uint32_t findMemoryType(uint32_t t_typeFilter, VkMemoryPropertyFlags t_properties)
+    {
+        VkPhysicalDeviceMemoryProperties memProperties;
+        vkGetPhysicalDeviceMemoryProperties(m_physicalDevice, &memProperties);
+
+        for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++)
+        {
+            if ((t_typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & t_properties) == t_properties)
+            {
+                return i;
+            }
+        }
+
+        throw std::runtime_error("failed to find suitable memory type!");
+    }
+
+    void createVertexBuffer()
+    {
+        VkBufferCreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = sizeof(m_vertices[0]) * m_vertices.size();
+        bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        if (vkCreateBuffer(m_device, &bufferInfo, nullptr, &m_vertexBuffer) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to create vertex buffer!");
+        }
+
+        VkMemoryRequirements memRequirements;
+        vkGetBufferMemoryRequirements(m_device, m_vertexBuffer, &memRequirements);
+
+        VkMemoryAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memRequirements.size;
+        allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+        if (vkAllocateMemory(m_device, &allocInfo, nullptr, &m_vertexBufferMemory) != VK_SUCCESS)
+        {
+            throw std::runtime_error("failed to allocate vertex buffer memory!");
+        }
+
+        vkBindBufferMemory(m_device, m_vertexBuffer, m_vertexBufferMemory, 0);
+
+        void* data;
+        vkMapMemory(m_device, m_vertexBufferMemory, 0, bufferInfo.size, 0, &data);
+        {
+            memcpy(data, m_vertices.data(), (size_t)bufferInfo.size);
+        }
+        vkUnmapMemory(m_device, m_vertexBufferMemory);
+    }
+
     void initVulkan()
     {
         createInstance();
@@ -1006,6 +1118,7 @@ private:
         createGraphicsPipeline();
         createFramebuffers();
         createCommandPool();
+        createVertexBuffer();
         createCommandBuffers();
         createSyncObjects();
     }
@@ -1139,6 +1252,9 @@ private:
     void cleanup()
     {
         cleanupSwapChain();
+
+        vkDestroyBuffer(m_device, m_vertexBuffer, nullptr);
+        vkFreeMemory(m_device, m_vertexBufferMemory, nullptr);
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         {

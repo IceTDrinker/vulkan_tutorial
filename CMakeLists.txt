@@ -73,8 +73,8 @@ add_subdirectory("${GLFW_ROOT}")
 target_include_directories(${EXECUTABLE_NAME} SYSTEM PRIVATE "${GLFW_ROOT}/include")
 target_link_libraries(${EXECUTABLE_NAME} glfw ${GLFW_LIBRARIES})
 
-# Add thirdparty_include with symlink to GLM (this is to avoid glm polluting intelisense include helper in visual studio)
-target_include_directories(${EXECUTABLE_NAME} SYSTEM PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty_include")
+# GLM include
+target_include_directories(${EXECUTABLE_NAME} SYSTEM PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glm")
 
 # Vulkan Configuration
 # Trust CMake https://cmake.org/cmake/help/latest/module/FindVulkan.html rather than some old official doc
