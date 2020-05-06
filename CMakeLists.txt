@@ -76,6 +76,9 @@ target_link_libraries(${EXECUTABLE_NAME} glfw ${GLFW_LIBRARIES})
 # GLM include
 target_include_directories(${EXECUTABLE_NAME} SYSTEM PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glm")
 
+# stb for image manipulation
+target_include_directories(${EXECUTABLE_NAME} SYSTEM PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/stb")
+
 # Vulkan Configuration
 # Trust CMake https://cmake.org/cmake/help/latest/module/FindVulkan.html rather than some old official doc
 target_compile_definitions(${EXECUTABLE_NAME} PRIVATE VK_USE_PLATFORM_WIN32_KHR)

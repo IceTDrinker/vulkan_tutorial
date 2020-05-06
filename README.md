@@ -5,6 +5,9 @@ First init the submodules :
 git submodule update --init
 ```
 
+Check the README.txt in the textures directory to get the image used in the tutorial
+
+
 Then create the build dir with what works for your system.
 
 Configure cmake from inside the build dir, check the build options for glfw : https://www.glfw.org/docs/3.3/compile.html
