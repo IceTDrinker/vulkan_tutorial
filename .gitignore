@@ -1,3 +1,5 @@
 .vs
 build
 shader_bc
+
+*.jpg
