@@ -103,6 +103,7 @@ if(MSVC)
     # Set working directory to easily access shader bytecode
     set_target_properties(${EXECUTABLE_NAME} PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
 
+    # Remove MSVC "fast" runtime checks see here : https://randomascii.wordpress.com/2011/07/22/visual-c-debug-buildsfast-checks-cause-5x-slowdowns/
     foreach(flag_var
         CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
         CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
