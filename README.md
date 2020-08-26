@@ -26,6 +26,4 @@ If you are on windows and open the Visual Studio solution, make sure to set vulk
 
 Then build and run depending on your system
 
-The thirdparty_include is a hack to avoid polluting intellisense imports in Visual Studio, if glm in thirdparty is added as an include folder all folders listed there are added to intellisense helper, which kind of defeats the purpose.
-
 Cheers
